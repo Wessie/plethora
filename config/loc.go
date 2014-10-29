@@ -17,40 +17,79 @@ import (
 // maxLocLength is the maximum length of the database path
 const maxLocLength = 4096
 
-// dbloc keeps track of the database location and keeps an open file handle
-// to lock against.
-var dbloc struct {
-	// loc is the current location of the database
-	loc string
-	// open handle to the dbloc file
-	*os.File
-	// mutex protects the other fields
+var (
+	// dbLocation is the global tracker of the location file
+	dbLocation dbLoc
+
+	// configDir is the directory we look in for the dbloc file
+	configDir = appdirs.UserConfigDir(Name, "", "", false)
+
+	// dbLocationFile is the filepath to the dbloc file
+	dbLocationFile = filepath.Join(configDir, "dbloc")
+
+	// dbDefaultLocation is the default path to the database files
+	dbDefaultLocation = filepath.Join(configDir, "db")
+)
+
+// dbLoc is the location of the database files, stored inside the file located
+// at the filepath returned by dbLocationFile
+type dbLoc struct {
+	// path is the current location of the database
+	path string
+	// mutex protects the path field
 	sync.Mutex
 }
 
-var (
-	dir = appdirs.UserConfigDir(Name, "", "", false)
-	// dblocFile is the location of the dbloc file, the dbloc
-	// file contains a single path. This path is the location
-	// of the database and should be a directory
-	dblocFile = func() string {
-		return filepath.Join(dir, "dbloc")
+// openFile opens and returns the dbLocationFile with correct flags
+// and permissions set.
+func (d *dbLoc) openFile() (*os.File, error) {
+	// TODO: lock file for concurrent access
+	return os.OpenFile(dbLocationFile, os.O_CREATE|os.O_RDWR, 0770)
+}
+
+func (d *dbLoc) updateFile(content []byte) error {
+	d.Lock()
+	defer d.Unlock()
+
+	f, err := os.OpenFile(dbLocationFile+".tmp", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0770)
+	if err != nil {
+		return err
 	}
-	// defaultLoc is the default database location
-	defaultLoc = func() string {
-		return filepath.Join(dir, "db")
+	// cleanup our mess:
+	// 1. Close might double-close the os.File, this should be fine in our context.
+	// 2. Remove will try to remove the file even if renaming was successful, since we
+	// only allow one caller at a time in here, it's safe for in-process consistency.
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	err = f.Truncate(int64(len(content)))
+	if err != nil {
+		return err
 	}
-)
+
+	n, err := f.Write(content)
+	if err != nil {
+		return err
+	} else if n != len(content) {
+		return errors.New("failed to write full content")
+	}
+
+	name := f.Name()
+	if err = f.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(name, dbLocationFile)
+}
 
 // Init initializes the config package, this should be called before any other
 // functions are used in this package.
 func Init() error {
-	// TODO: lock file for concurrent access
-	f, err := os.OpenFile(dblocFile(), os.O_CREATE|os.O_RDWR, 0770)
+	f, err := dbLocation.openFile()
 	if err != nil {
 		return err
 	}
-	dbloc.File = f
+	defer f.Close()
 
 	b, err := ioutil.ReadAll(&io.LimitedReader{R: f, N: maxLocLength})
 	if err != nil {
@@ -58,35 +97,32 @@ func Init() error {
 	}
 
 	if len(b) > 0 {
-		dbloc.loc = string(b)
+		dbLocation.path = string(b)
 		return nil
 	}
 
-	return UpdateLocation(defaultLoc())
+	return UpdateLocation(dbDefaultLocation)
 }
 
 // Location returns the current location of the database
 func Location() string {
-	dbloc.Lock()
-	defer dbloc.Unlock()
-	return dbloc.loc
+	dbLocation.Lock()
+	defer dbLocation.Unlock()
+	return dbLocation.path
 }
 
 // UpdateLocation updates the database location in the dbloc file, this
 // does not move any existing databases around.
-func UpdateLocation(loc string) error {
-	if len(loc) > maxLocLength {
+func UpdateLocation(path string) error {
+	if len(path) > maxLocLength {
 		return errors.New("new database location is too long")
 	}
 
-	dbloc.Lock()
-	defer dbloc.Unlock()
-
-	_, err := dbloc.WriteAt([]byte(loc), 0)
+	err := dbLocation.updateFile([]byte(path))
 	if err != nil {
 		return err
 	}
 
-	dbloc.loc = loc
+	dbLocation.path = path
 	return nil
 }
