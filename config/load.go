@@ -33,9 +33,9 @@ func Open(db *bolt.DB) Config {
 // err == nil.
 func (c Config) Load(key string, value interface{}) error {
 	return c.DB.View(func(tx *bolt.Tx) error {
-		buck, err := tx.CreateBucketIfNotExists([]byte(BucketName))
-		if err != nil {
-			return err
+		buck := tx.Bucket([]byte(BucketName))
+		if buck == nil {
+			return nil
 		}
 
 		b := buck.Get([]byte(key))

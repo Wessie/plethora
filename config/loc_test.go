@@ -1,36 +1,19 @@
 package config
 
 import (
-	"fmt"
-	"math/rand"
-	"os"
-	"path/filepath"
 	"testing"
+
+	"github.com/Wessie/plethora/config/testutil"
 )
 
-func createTempDir() (string, error) {
-	hex := fmt.Sprintf("%x", rand.Int())
-
-	d := filepath.Join(os.TempDir(), hex)
-	if err := os.MkdirAll(d, 0770); err != nil {
-		return "", err
-	}
-
-	return d, nil
-}
-
-func removeTempDir(dir string) {
-	os.RemoveAll(dir)
-}
-
-func TestInit(t *testing.T) {
+func TestConfigInit(t *testing.T) {
 	var err error
 	// change from the user-looking directory to a temp one
-	dir, err = createTempDir()
+	dir, err = testutil.TempDir()
 	if err != nil {
 		t.Fatal("could not create temporary directory")
 	}
-	defer removeTempDir(dir)
+	defer testutil.RemoveTempDir(dir)
 
 	// test if initializing works
 	if err := Init(); err != nil {
