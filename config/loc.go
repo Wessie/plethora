@@ -24,16 +24,18 @@ var (
 	// configDir is the directory we look in for the dbloc file
 	configDir = appdirs.UserConfigDir(Name, "", "", false)
 
-	// dbLocationFile is the filepath to the dbloc file
+	// dbLocationFile is the default filepath to the dbloc file
 	dbLocationFile = filepath.Join(configDir, "dbloc")
 
-	// dbDefaultLocation is the default path to the database files
+	// dbDefaultLocation is the default path to the database directory
 	dbDefaultLocation = filepath.Join(configDir, "db")
 )
 
 // dbLoc is the location of the database files, stored inside the file located
 // at the filepath returned by dbLocationFile
 type dbLoc struct {
+	// filename is the filename of the dbloc file, defaults to dbLocationFile
+	filename string
 	// path is the current location of the database
 	path string
 	// mutex protects the path field
@@ -44,14 +46,18 @@ type dbLoc struct {
 // and permissions set.
 func (d *dbLoc) openFile() (*os.File, error) {
 	// TODO: lock file for concurrent access
-	return os.OpenFile(dbLocationFile, os.O_CREATE|os.O_RDWR, 0770)
+	return os.OpenFile(d.filename, os.O_CREATE|os.O_RDWR, 0770)
 }
 
-func (d *dbLoc) updateFile(content []byte) error {
+func (d *dbLoc) updateFile(content string) error {
+	if len(content) > maxLocLength {
+		return errors.New("new database location is too long")
+	}
+
 	d.Lock()
 	defer d.Unlock()
 
-	f, err := os.OpenFile(dbLocationFile+".tmp", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0770)
+	f, err := os.OpenFile(d.filename+".tmp", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0770)
 	if err != nil {
 		return err
 	}
@@ -67,7 +73,7 @@ func (d *dbLoc) updateFile(content []byte) error {
 		return err
 	}
 
-	n, err := f.Write(content)
+	n, err := f.Write([]byte(content))
 	if err != nil {
 		return err
 	} else if n != len(content) {
@@ -79,13 +85,31 @@ func (d *dbLoc) updateFile(content []byte) error {
 		return err
 	}
 
-	return os.Rename(name, dbLocationFile)
+	if err = os.Rename(name, d.filename); err != nil {
+		return err
+	}
+
+	d.path = content
+	return nil
 }
 
 // Init initializes the config package, this should be called before any other
 // functions are used in this package.
 func Init() error {
-	f, err := dbLocation.openFile()
+	return dbLocation.init()
+}
+
+// init initializes internal and on-disk state of the dbloc file, if the file
+// does not exist it creates it, otherwise opens it and reads the content.
+func (d *dbLoc) init() error {
+	d.Lock()
+
+	// set the filename to the default, if we have none yet
+	if d.filename == "" {
+		d.filename = dbLocationFile
+	}
+
+	f, err := d.openFile()
 	if err != nil {
 		return err
 	}
@@ -97,11 +121,12 @@ func Init() error {
 	}
 
 	if len(b) > 0 {
-		dbLocation.path = string(b)
+		d.path = string(b)
 		return nil
 	}
 
-	return UpdateLocation(dbDefaultLocation)
+	d.Unlock() // unlock before call into updateFile, since it also wants it
+	return d.updateFile(dbDefaultLocation)
 }
 
 // Location returns the current location of the database
@@ -114,15 +139,5 @@ func Location() string {
 // UpdateLocation updates the database location in the dbloc file, this
 // does not move any existing databases around.
 func UpdateLocation(path string) error {
-	if len(path) > maxLocLength {
-		return errors.New("new database location is too long")
-	}
-
-	err := dbLocation.updateFile([]byte(path))
-	if err != nil {
-		return err
-	}
-
-	dbLocation.path = path
-	return nil
+	return dbLocation.updateFile(path)
 }

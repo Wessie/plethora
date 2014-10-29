@@ -14,29 +14,28 @@ func TestConfigInit(t *testing.T) {
 		t.Fatal("could not create temporary directory")
 	}
 	defer testutil.RemoveTempDir(dir)
-	// set the location back to its previous value once we're
-	// done here
-	defer func(old string) {
-		dbLocationFile = old
-	}(dbLocationFile)
 
-	dbLocationFile = filepath.Join(dir, "dbloc")
+	dbLocFile := filepath.Join(dir, "dbloc")
+
+	dbloc := dbLoc{
+		filename: dbLocFile,
+	}
 
 	// test if initializing works
-	if err := Init(); err != nil {
+	if err := dbloc.init(); err != nil {
 		t.Fatal("failed initializing:", err)
 	}
 
-	if Location() == "" {
+	if dbloc.path == "" {
 		t.Error("failed: set default location")
 	}
 
 	newLoc := "testing"
-	if err := UpdateLocation(newLoc); err != nil {
+	if err := dbloc.updateFile(newLoc); err != nil {
 		t.Error("failed: update location", err)
 	}
 
-	if Location() != newLoc {
+	if dbloc.path != newLoc {
 		t.Error("failed: location is not updated")
 	}
 }
