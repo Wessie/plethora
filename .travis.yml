@@ -5,5 +5,4 @@ go:
   - 1.3.2
   - 1.3.3
   - tip
-before_script:
-  - go list -json
+
