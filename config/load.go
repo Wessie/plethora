@@ -28,6 +28,14 @@ func Open(db *bolt.DB) Config {
 	}
 }
 
+// OpenName is the same as Open but uses Database to select
+// a database to use by the name given.
+func OpenName(name string) (Config, error) {
+	db, err := Database(name)
+
+	return Open(db), err
+}
+
 // Load retrieves the value stored under the key and unmarshals it into
 // the value given. If the key does not exist or is empty this returns
 // err == nil.
