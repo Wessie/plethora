@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestDatabaseClosing(t *testing.T) {
 	defer TestConfiguration()()
@@ -38,4 +42,23 @@ func TestDatabaseCache(t *testing.T) {
 	}
 }
 
-func TestDatabaseName(t *testing.T) {}
+func TestDatabaseName(t *testing.T) {
+	defer TestConfiguration()()
+
+	a, b := DatabasePath("dup"), DatabasePath("dup")
+	if a != b {
+		t.Errorf("database filepath is not deterministic: %s != %s", a, b)
+	}
+
+	path := DatabasePath("nametest")
+	if !filepath.IsAbs(path) {
+		t.Error("database filepath is not absolute:", path)
+	}
+
+	if strings.Count(filepath.ToSlash(path), "/") < 2 {
+		// this is possible to hit legimately if XDG* environment variables
+		// are set to the root of the system, but that is a rare occurence
+		// and instead we assume it is wrong for that to happen.
+		t.Error("database filepath is too close to the root:", path)
+	}
+}
