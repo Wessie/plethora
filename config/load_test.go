@@ -3,8 +3,6 @@ package config
 import (
 	"reflect"
 	"testing"
-
-	"github.com/Wessie/plethora/config/testutil"
 )
 
 var storeAndLoadTests = []struct {
@@ -22,13 +20,9 @@ var storeAndLoadTests = []struct {
 }
 
 func TestConfigStoreAndLoad(t *testing.T) {
-	db, cleanup, err := testutil.NewTestDB()
-	defer cleanup()
-	if err != nil {
-		t.Fatal(err)
-	}
+	defer TestConfiguration()()
 
-	c := Open(db)
+	c := OpenConfig("test")
 	for _, tCase := range storeAndLoadTests {
 		err := c.Store(tCase.key, tCase.value)
 		if err != nil {

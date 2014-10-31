@@ -42,6 +42,29 @@ type dbLoc struct {
 	sync.Mutex
 }
 
+// TestConfiguration sets up temporary locations for configuration files, this
+// should only be called in testing code.
+//
+// The returned function should be called to cleanup any files that are created.
+func TestConfiguration() func() {
+	old := dbLocation
+
+	tempDir, err := ioutil.TempDir("", Name)
+	if err != nil {
+		panic("testing: failed to create temporary directory: " + err.Error())
+	}
+
+	dbLocation = dbLoc{
+		filename: filepath.Join(tempDir, "dbloc"),
+		path:     filepath.Join(tempDir, "db"),
+	}
+
+	return func() {
+		dbLocation = old
+		os.RemoveAll(tempDir)
+	}
+}
+
 // openFile opens and returns the dbLocationFile with correct flags
 // and permissions set.
 func (d *dbLoc) openFile() (*os.File, error) {

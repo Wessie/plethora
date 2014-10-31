@@ -18,29 +18,24 @@ const BucketName = "config"
 // encoding/json to encode and decode values passed to Load
 // and Store.
 type Config struct {
-	DB *bolt.DB
+	name string
 }
 
-// Open returns a Config that uses the database passed.
-func Open(db *bolt.DB) Config {
-	return Config{
-		DB: db,
-	}
-}
-
-// OpenName is the same as Open but uses Database to select
-// a database to use by the name given.
-func OpenName(name string) (Config, error) {
-	db, err := Database(name)
-
-	return Open(db), err
+// OpenConfig returns the Config associated with the name passed in.
+func OpenConfig(name string) Config {
+	return Config{name}
 }
 
 // Load retrieves the value stored under the key and unmarshals it into
 // the value given. If the key does not exist or is empty this returns
 // err == nil.
 func (c Config) Load(key string, value interface{}) error {
-	return c.DB.View(func(tx *bolt.Tx) error {
+	db, err := Database(c.name)
+	if err != nil {
+		return err
+	}
+
+	return db.View(func(tx *bolt.Tx) error {
 		buck := tx.Bucket([]byte(BucketName))
 		if buck == nil {
 			return nil
@@ -74,7 +69,12 @@ func (c Config) Store(key string, value interface{}) error {
 		return nil
 	}
 
-	return c.DB.Update(func(tx *bolt.Tx) error {
+	db, err := Database(c.name)
+	if err != nil {
+		return err
+	}
+
+	return db.Update(func(tx *bolt.Tx) error {
 		buck, err := tx.CreateBucketIfNotExists([]byte(BucketName))
 		if err != nil {
 			return err
