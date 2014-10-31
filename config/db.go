@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -8,12 +9,13 @@ import (
 )
 
 var dbMutex sync.Mutex
-var dbMap map[string]*bolt.DB
+var dbMap = make(map[string]*bolt.DB)
 
 // Database returns the bolt database associated with the name
 // given. If Database is called multiple times with the same name
 // it will return the same *bolt.DB unless it was previously closed.
 func Database(name string) (*bolt.DB, error) {
+	// TODO: return only errors defined by us
 	path := DatabasePath(name)
 
 	dbMutex.Lock()
@@ -33,6 +35,11 @@ func Database(name string) (*bolt.DB, error) {
 		if err != bolt.ErrDatabaseNotOpen {
 			return db, nil
 		}
+	}
+
+	// create the path to our new database file if it doesn't exist yet
+	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
+		return nil, err
 	}
 
 	// if we either have no existing db, or have one that is closed
