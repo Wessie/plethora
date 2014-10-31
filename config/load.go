@@ -9,19 +9,11 @@ import (
 const BucketName = "config"
 
 // Config is a helper for configuration storage and retrieval.
-//
-// Configuration is stored in a boltdb bucket named after the
-// BucketName constant. Storing and retrieval are handled by
-// the various methods defined on this type.
-//
-// The current implementation of storing and retrieval uses
-// encoding/json to encode and decode values passed to Load
-// and Store.
 type Config struct {
 	name string
 }
 
-// OpenConfig returns the Config associated with the name passed in.
+// OpenConfig returns the Config associated with the name given.
 func OpenConfig(name string) Config {
 	return Config{name}
 }
@@ -29,6 +21,9 @@ func OpenConfig(name string) Config {
 // Load retrieves the value stored under the key and unmarshals it into
 // the value given. If the key does not exist or is empty this returns
 // err == nil.
+//
+// Load uses an encoding to load the value, any fields in the
+// value type need to be exported to load properly.
 func (c Config) Load(key string, value interface{}) error {
 	db, err := Database(c.name)
 	if err != nil {
@@ -54,6 +49,9 @@ func (c Config) Load(key string, value interface{}) error {
 // Store stores the value given under the key passed. Store encodes the value
 // given before storing it. The encoding used can be found in the Config
 // documentation.
+//
+// Store uses an encoding to store the value given, this means that any fields
+// in the value type need to be exported to be saved.
 func (c Config) Store(key string, value interface{}) error {
 	if value == nil {
 		panic("config: Store value is nil")
