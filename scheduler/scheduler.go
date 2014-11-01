@@ -1,0 +1,62 @@
+package scheduler
+
+import "time"
+
+func NewScheduler() Scheduler {
+	s := Scheduler{
+		stop:     make(chan struct{}),
+		newTask:  make(chan Task),
+		schedule: make([]Task, 0),
+	}
+
+	go s.manage()
+	return s
+}
+
+type Scheduler struct {
+	stop     chan struct{}
+	newTask  chan Task
+	schedule []Task
+}
+
+// manage manages the scheduling process
+func (s Scheduler) manage() {
+	var wait = time.NewTimer(time.Hour * 24)
+	var nextTaskTime time.Time
+
+stopScheduler:
+	for {
+		select {
+		case t := <-s.newTask:
+			nextTaskTime = s.scheduleTask(t)
+		case <-wait.C:
+			nextTaskTime = s.processSchedule()
+		case <-s.stop:
+			break stopScheduler
+		}
+
+		// sync our timer to the schedule changes
+		wait.Reset(nextTaskTime.Sub(time.Now()))
+	}
+
+	wait.Stop()
+}
+
+// scheduleTask adds a task to the schedule, this function is only
+// safe to call from the managing goroutine.
+func (s Scheduler) scheduleTask(t Task) time.Time {
+	return time.Now()
+}
+
+// processSchedule processes the schedule, this involves a few steps:
+// 1. runs all tasks that are ready to run
+// 2. returns the time of the first task that isn't ready to run
+// yet.
+func (s Scheduler) processSchedule() time.Time {
+	return time.Now().Add(time.Hour * 24)
+}
+
+// Stop stops the scheduler
+func (s Scheduler) Stop() {
+	close(s.stop)
+}
