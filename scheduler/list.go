@@ -75,6 +75,8 @@ func (sl *scheduleList) pop(key time.Time) (time.Time, Task) {
 
 	n := sl.head
 	sl.head = sl.head.next
-	sl.head.prev = nil
+	if sl.head != nil {
+		sl.head.prev = nil
+	}
 	return n.key, n.val
 }
