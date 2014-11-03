@@ -8,7 +8,7 @@ var NoMore time.Time
 // the planner is responsible for determining the next date and time
 // a job is supposed to run.
 type Planner interface {
-	Next() time.Time
+	PlanJob(Job) time.Time
 }
 
 func newTimePlanner(t time.Time) Planner {
@@ -18,6 +18,6 @@ func newTimePlanner(t time.Time) Planner {
 
 type timePlanner time.Time
 
-func (tp *timePlanner) Next() time.Time {
+func (tp *timePlanner) PlanJob(Job) time.Time {
 	return time.Time(*tp)
 }

@@ -64,7 +64,7 @@ stopScheduler:
 // scheduleTask adds a task to the schedule, this function is only
 // safe to call from the managing goroutine.
 func (s Scheduler) scheduleTask(tsk Task) time.Time {
-	var taskTime = tsk.Next()
+	var taskTime = tsk.PlanJob(tsk.Job)
 
 	if taskTime == NoMore {
 		return s.schedule.first()
