@@ -4,23 +4,20 @@ import "time"
 
 var NoMore time.Time
 
-type Schedule interface {
+// Planner is an interface to be implemented by the planner of jobs,
+// the planner is responsible for determining the next date and time
+// a job is supposed to run.
+type Planner interface {
 	Next() time.Time
-	JobRan() bool
 }
 
-func newScheduleTime(t time.Time) *scheduleTime {
-	st := scheduleTime(t)
+func newTimePlanner(t time.Time) Planner {
+	st := timePlanner(t)
 	return &st
 }
 
-type scheduleTime time.Time
+type timePlanner time.Time
 
-func (st *scheduleTime) Next() time.Time {
-	return time.Time(*st)
-}
-
-func (st *scheduleTime) JobRan() bool {
-	*st = scheduleTime(NoMore)
-	return false
+func (tp *timePlanner) Next() time.Time {
+	return time.Time(*tp)
 }

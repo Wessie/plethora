@@ -1,10 +1,10 @@
 package scheduler
 
-// Task consists of a Job and a Schedule to run the job on, the job
-// will be rescheduled until Schedule.Next returns NoMore.
+// Task consists of a Job and a Planner, the job will be
+// scheduled and ran according to the planners timing
 type Task struct {
 	Job
-	Schedule
+	Planner
 }
 
 // ScheduleTask schedules a task to be run

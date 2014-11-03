@@ -10,8 +10,8 @@ type Job interface {
 // ScheduleJob schedules a Job to be run once at the specified time
 func (s Scheduler) ScheduleJob(t time.Time, j Job) {
 	s.newTask <- Task{
-		Job:      j,
-		Schedule: newScheduleTime(t),
+		Job:     j,
+		Planner: newTimePlanner(t),
 	}
 }
 
