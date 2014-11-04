@@ -1,10 +1,14 @@
 package scheduler
 
-// Task consists of a Job and a Planner, the job will be
-// scheduled and ran according to the planners timing
+// Task is a task to be ran by the scheduler, it requires
+// a Job to execute, and a Planner to plan said execution.
 type Task struct {
 	Job
 	Planner
+}
+
+func (t *Task) Cancel() error {
+	return nil
 }
 
 // ScheduleTask schedules a task to be run

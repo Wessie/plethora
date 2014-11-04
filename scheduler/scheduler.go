@@ -2,9 +2,12 @@ package scheduler
 
 import "time"
 
-const DatabaseName = "plethora-scheduler"
-
-func NewScheduler(name string) (*Scheduler, error) {
+// NewScheduler returns an initialized Scheduler, the scheduler
+// is automatically started before NewScheduler returns.
+//
+// The returned scheduler has to be stopped by calling Stop or
+// it will leak resources.
+func NewScheduler(name string) *Scheduler {
 	s := &Scheduler{
 		Name:    name,
 		stop:    make(chan struct{}),
@@ -13,9 +16,10 @@ func NewScheduler(name string) (*Scheduler, error) {
 	}
 
 	go s.manage()
-	return s, nil
+	return s
 }
 
+// Scheduler implements a basic task scheduler
 type Scheduler struct {
 	// Name of the scheduler instance, this is used for storing
 	// the schedule and any other persistent information.
