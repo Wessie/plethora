@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func fillFrom(sl *scheduleList, from time.Time) []time.Time {
+func fillFrom(sl *sortedQueue, from time.Time) []time.Time {
 	var filling []time.Time
 	var i time.Duration
 
@@ -20,7 +20,7 @@ func fillFrom(sl *scheduleList, from time.Time) []time.Time {
 }
 
 func TestScheduleListPopHalf(t *testing.T) {
-	var sl scheduleList
+	var sl sortedQueue
 	var now = time.Now()
 
 	filling := fillFrom(&sl, now)
@@ -36,7 +36,7 @@ func TestScheduleListPopHalf(t *testing.T) {
 }
 
 func TestScheduleListPopNone(t *testing.T) {
-	var sl scheduleList
+	var sl sortedQueue
 	var now = time.Now()
 
 	fillFrom(&sl, now)
@@ -49,7 +49,7 @@ func TestScheduleListPopNone(t *testing.T) {
 }
 
 func TestScheduleListFirst(t *testing.T) {
-	var sl scheduleList
+	var sl sortedQueue
 	var now = time.Now()
 
 	fillFrom(&sl, now)
@@ -61,7 +61,7 @@ func TestScheduleListFirst(t *testing.T) {
 }
 
 func TestScheduleListFillEmptyFillCycle(t *testing.T) {
-	var sl scheduleList
+	var sl sortedQueue
 	var now = time.Now()
 	var j int
 	var everything = now.Add(time.Minute)

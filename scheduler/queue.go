@@ -10,12 +10,12 @@ type element struct {
 	val Task
 }
 
-type scheduleList struct {
+type sortedQueue struct {
 	head *element
 	tail *element
 }
 
-func (sl *scheduleList) first() time.Time {
+func (sl *sortedQueue) first() time.Time {
 	if sl.head == nil {
 		return NoMore
 	}
@@ -23,7 +23,7 @@ func (sl *scheduleList) first() time.Time {
 	return sl.head.key
 }
 
-func (sl *scheduleList) put(key time.Time, val Task) time.Time {
+func (sl *sortedQueue) put(key time.Time, val Task) time.Time {
 	el := &element{
 		key: key,
 		val: val,
@@ -64,7 +64,7 @@ func (sl *scheduleList) put(key time.Time, val Task) time.Time {
 	return sl.first()
 }
 
-func (sl *scheduleList) pop(key time.Time) (time.Time, Task) {
+func (sl *sortedQueue) pop(key time.Time) (time.Time, Task) {
 	if sl.head == nil {
 		return NoMore, Task{}
 	}

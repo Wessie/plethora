@@ -1,9 +1,6 @@
 package scheduler
 
-import (
-	"strings"
-	"time"
-)
+import "time"
 
 const DatabaseName = "plethora-scheduler"
 
@@ -24,15 +21,15 @@ type Scheduler struct {
 	// the schedule and any other persistent information.
 	Name string
 
-	// channel to signal a "you should stop"
+	// channel to signal a "you should stop running"
 	stop chan struct{}
-	// channel to signal "we have stopped"
+	// channel to signal "we have stopped running"
 	stopped chan struct{}
-	// channel to signal a new task being scheduled
+	// channel to signal a new task is to be scheduled
 	newTask chan Task
 
-	// sorted linked list of the schedule
-	schedule *scheduleList
+	// queue of tasks to be run
+	queue *sortedQueue
 }
 
 // manage manages the scheduling process
@@ -44,10 +41,10 @@ stopScheduler:
 	for {
 		select {
 		case t := <-s.newTask:
-			nextTaskTime = s.scheduleTask(t)
+			nextTaskTime = s.queueTask(t)
 
 		case <-wait.C:
-			nextTaskTime = s.processSchedule()
+			nextTaskTime = s.processQueue()
 
 		case <-s.stop:
 			break stopScheduler
@@ -61,24 +58,44 @@ stopScheduler:
 	wait.Stop()
 }
 
-// scheduleTask adds a task to the schedule, this function is only
-// safe to call from the managing goroutine.
-func (s Scheduler) scheduleTask(tsk Task) time.Time {
+// queueTask adds a task to the scheduling queue, this function is
+// only safe to call from the managing goroutine.
+func (s Scheduler) queueTask(tsk Task) time.Time {
 	var taskTime = tsk.PlanJob(tsk.Job)
 
 	if taskTime == NoMore {
-		return s.schedule.first()
+		return s.queue.first()
 	}
 
-	return s.schedule.put(taskTime, tsk)
+	return s.queue.put(taskTime, tsk)
 }
 
 // processSchedule processes the schedule, this involves a few steps:
 // 1. runs all tasks that are ready to run
 // 2. returns the time of the first task that isn't ready to run
 // yet.
-func (s Scheduler) processSchedule() time.Time {
-	return time.Now().Add(time.Hour * 24)
+func (s Scheduler) processQueue() time.Time {
+	var task Task
+	var taskTime time.Time
+
+	now := time.Now()
+	for taskTime, task = s.queue.pop(now); taskTime != NoMore; taskTime, task = s.queue.pop(now) {
+		go s.runTask(task)
+	}
+
+	// decide when we want to be called again, if there is stuff in the queue
+	// we choose the time of the first task that wants to be ran. Otherwise we
+	// use a very liberal 24 hours from the time this function started running.
+	if taskTime = s.queue.first(); taskTime != NoMore {
+		return taskTime
+	}
+
+	return now.Add(time.Hour * 24)
+}
+
+func (s Scheduler) runTask(task Task) {
+	task.Run()
+	s.ScheduleTask(task)
 }
 
 // Stop stops the scheduler, Stop waits until an acknowledgement of stopping
@@ -91,8 +108,4 @@ func (s Scheduler) Stop() {
 
 	close(s.stop)
 	<-s.stopped
-}
-
-func bucketName(name ...string) []byte {
-	return []byte(strings.Join(name, "-"))
 }
