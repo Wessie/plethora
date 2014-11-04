@@ -19,5 +19,7 @@ func newTimePlanner(t time.Time) Planner {
 type timePlanner time.Time
 
 func (tp *timePlanner) PlanJob(Job) time.Time {
-	return time.Time(*tp)
+	re := time.Time(*tp)
+	*tp = timePlanner(NoMore)
+	return re
 }
