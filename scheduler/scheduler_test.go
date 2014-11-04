@@ -44,36 +44,32 @@ func TestSchedulerDelay(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	var delta = time.Second / 4
+	var delay = time.Second
 	var s = NewScheduler("test")
-	var ran = make(chan bool)
+	var when = make(chan time.Time)
 
 	job := FuncJob(func() error {
-		close(ran)
+		when <- time.Now()
 		return nil
 	})
 
-	// run our job in 3 seconds, we check 2 seconds before
-	// and 2 seconds after the promised time to see if it
-	// ran too early or too late.
-	s.ScheduleJob(time.Now().Add(time.Second*3), job)
+	now := time.Now()
+	s.ScheduleJob(time.Now().Add(delay), job)
 
-	before := time.After(time.Second * 1)
-	after := time.After(time.Second * 5)
-
-	for {
-		select {
-		case <-before:
-			before = nil
-		case <-ran:
-			if before != nil {
-				t.Fatal("job ran too early")
-			}
-			ran = nil
-		case <-after:
-			if before != nil || ran != nil {
-				t.Error("failed to run job in 2-second window")
-			}
-			return
-		}
+	var rt time.Time
+	select {
+	case rt = <-when:
+	case <-time.After(time.Second * 3):
+		t.Fatal("failed to execute job in allowed time")
 	}
+
+	val := rt.Sub(now)
+	if delay-delta > val || val > delay+delta {
+		t.Errorf("expected execution in %s-%s range, actual was %s",
+			delay-delta, delay+delta, val)
+	}
+
+	t.Logf("expected range: %s-%s, actual: %s", delay-delta, delay+delta, val)
 }
