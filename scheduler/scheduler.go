@@ -13,6 +13,7 @@ func NewScheduler(name string) *Scheduler {
 		stop:    make(chan struct{}),
 		stopped: make(chan struct{}),
 		newTask: make(chan Task),
+		queue:   new(sortedQueue),
 	}
 
 	go s.manage()
@@ -106,8 +107,10 @@ func (s Scheduler) runTask(task Task) {
 // has been received. Calling Stop multiple times does nothing
 func (s Scheduler) Stop() {
 	// if we're already closed there is nothing to do here
-	if _, ok := <-s.stopped; !ok {
+	select {
+	case <-s.stopped:
 		return
+	default:
 	}
 
 	close(s.stop)
