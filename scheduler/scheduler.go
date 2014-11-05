@@ -9,11 +9,12 @@ import "time"
 // it will leak resources.
 func NewScheduler(name string) *Scheduler {
 	s := &Scheduler{
-		Name:    name,
-		stop:    make(chan struct{}),
-		stopped: make(chan struct{}),
-		newTask: make(chan Task),
-		queue:   new(sortedQueue),
+		Name:       name,
+		stop:       make(chan struct{}),
+		stopped:    make(chan struct{}),
+		newTask:    make(chan Task),
+		removeTask: make(chan Task),
+		queue:      new(sortedQueue),
 	}
 
 	go s.manage()
@@ -32,6 +33,8 @@ type Scheduler struct {
 	stopped chan struct{}
 	// channel to signal a new task is to be scheduled
 	newTask chan Task
+	// channel to signal removal of a task (before it has ran)
+	removeTask chan Task
 
 	// queue of tasks to be run
 	queue *sortedQueue
@@ -47,10 +50,10 @@ stopScheduler:
 		select {
 		case t := <-s.newTask:
 			nextTaskTime = s.queueTask(t)
-
+		case t := <-s.removeTask:
+			nextTaskTime = s.unqueueTask(t)
 		case <-wait.C:
 			nextTaskTime = s.processQueue()
-
 		case <-s.stop:
 			break stopScheduler
 		}
@@ -73,6 +76,12 @@ func (s Scheduler) queueTask(tsk Task) time.Time {
 	}
 
 	return s.queue.put(taskTime, tsk)
+}
+
+// unqueueTask removes a task from the scheduling queue, this function
+// is only safe to call from the managing goroutine.
+func (s Scheduler) unqueueTask(tsk Task) time.Time {
+	return s.queue.remove(tsk)
 }
 
 // processSchedule processes the schedule, this involves a few steps:
@@ -101,6 +110,13 @@ func (s Scheduler) processQueue() time.Time {
 func (s Scheduler) runTask(task Task) {
 	task.Run()
 	s.ScheduleTask(task)
+}
+
+// Cancel cancels the scheduling of the task given, if the task is not scheduled.
+// Either due to never having existed or due to having been ran before Cancel was
+// called this will do nothing.
+func (s Scheduler) Cancel(t Task) {
+	s.removeTask <- t
 }
 
 // Stop stops the scheduler, Stop waits until an acknowledgement of stopping

@@ -5,9 +5,14 @@ package scheduler
 type Task struct {
 	Job
 	Planner
+
+	// schedule is the Scheduler this task is to be
+	// run by
+	schedule *Scheduler
 }
 
-func (t *Task) Cancel() error {
+func (t Task) Cancel() error {
+	t.schedule.Cancel(t)
 	return nil
 }
 

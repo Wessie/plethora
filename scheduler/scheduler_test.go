@@ -40,7 +40,6 @@ func TestScheduleJobNow(t *testing.T) {
 }
 
 func TestSchedulerDelay(t *testing.T) {
-	// TODO: very slow, and error prone test, find a way to fix it
 	if testing.Short() {
 		t.Skip()
 	}
