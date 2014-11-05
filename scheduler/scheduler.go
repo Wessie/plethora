@@ -71,17 +71,18 @@ stopScheduler:
 func (s Scheduler) queueTask(tsk Task) time.Time {
 	var taskTime = tsk.PlanJob(tsk.Job)
 
-	if taskTime == NoMore {
-		return s.queue.first()
+	if taskTime != NoMore {
+		s.queue.put(taskTime, tsk)
 	}
 
-	return s.queue.put(taskTime, tsk)
+	return s.queue.first()
 }
 
 // unqueueTask removes a task from the scheduling queue, this function
 // is only safe to call from the managing goroutine.
 func (s Scheduler) unqueueTask(tsk Task) time.Time {
-	return s.queue.removeTask(tsk)
+	s.queue.removeTask(tsk)
+	return s.queue.first()
 }
 
 // processSchedule processes the schedule, this involves a few steps:
