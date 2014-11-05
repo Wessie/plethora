@@ -29,37 +29,35 @@ func (sl *sortedQueue) put(key time.Time, val Task) time.Time {
 		val: val,
 	}
 
-	// special case if this is the first item
 	if sl.head == nil {
 		sl.head = el
 		sl.tail = el
-		return key
-	}
-
-	var c *element
-	for c = sl.head; c != nil && c.key.Before(key); c = c.next {
-	}
-
-	if c == nil { // insert at tail
-		c = sl.tail
-
-		el.prev = c
-		sl.tail = el
-		c.next = el
 		return sl.first()
 	}
 
-	// otherwise it's a plain insert before node
-	el.next = c
-	el.prev = c.prev
-
-	if c.prev == nil {
+	if sl.head.key.After(key) {
+		sl.head.prev = el
+		el.next = sl.head
 		sl.head = el
-	} else {
-		el.prev.next = el
+		return sl.first()
 	}
 
-	c.prev = el
+	if sl.tail.key.Before(key) {
+		sl.tail.next = el
+		el.prev = sl.tail
+		sl.tail = el
+		return sl.first()
+	}
+
+	// find the element to insert after
+	var after *element
+	for after = sl.head; after.key.Before(key); after = after.next {
+	}
+
+	after.next.prev = el
+	el.next = after.next
+	after.next = el
+	el.prev = after
 
 	return sl.first()
 }
@@ -73,10 +71,35 @@ func (sl *sortedQueue) pop(key time.Time) (time.Time, Task) {
 		return NoMore, Task{}
 	}
 
-	n := sl.head
-	sl.head = sl.head.next
-	if sl.head != nil {
-		sl.head.prev = nil
+	if sl.head.next != nil {
+		sl.head.next.prev = nil
+	} else {
+		sl.tail = nil
 	}
+
+	n := sl.head
+	sl.head = n.next
 	return n.key, n.val
+}
+
+func (sl *sortedQueue) remove(val Task) time.Time {
+	for c := sl.head; c != nil; c = c.next {
+		if c.val != val {
+			continue
+		}
+
+		if c.prev == nil {
+			sl.head = c.next
+		} else {
+			c.prev.next = c.next
+		}
+
+		if c.next == nil {
+			sl.tail = c.prev
+		} else {
+			c.next.prev = c.prev
+		}
+	}
+
+	return sl.first()
 }
