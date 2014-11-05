@@ -81,7 +81,7 @@ func (s Scheduler) queueTask(tsk Task) time.Time {
 // unqueueTask removes a task from the scheduling queue, this function
 // is only safe to call from the managing goroutine.
 func (s Scheduler) unqueueTask(tsk Task) time.Time {
-	return s.queue.remove(tsk)
+	return s.queue.removeTask(tsk)
 }
 
 // processSchedule processes the schedule, this involves a few steps:

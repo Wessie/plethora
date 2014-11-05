@@ -107,7 +107,7 @@ func TestQueueRemove(t *testing.T) {
 	// add our dummy one at the end
 	sl.put(dummyTime, dummy)
 	// remove all others
-	sl.remove(Task{})
+	sl.removeTask(Task{})
 
 	// now try to grab our dummy again, it should be the head
 	tm, tsk := sl.pop(dummyTime)

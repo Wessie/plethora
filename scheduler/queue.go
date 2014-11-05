@@ -35,29 +35,30 @@ func (sl *sortedQueue) put(key time.Time, val Task) time.Time {
 		return sl.first()
 	}
 
-	if sl.head.key.After(key) {
+	if key.Before(sl.head.key) {
 		sl.head.prev = el
 		el.next = sl.head
 		sl.head = el
 		return sl.first()
 	}
 
-	if sl.tail.key.Before(key) {
+	if key.After(sl.tail.key) {
 		sl.tail.next = el
 		el.prev = sl.tail
 		sl.tail = el
 		return sl.first()
 	}
 
-	// find the element to insert after
-	var after *element
-	for after = sl.head; after.key.Before(key); after = after.next {
+	// find the element to insert after, we can omit nil checks because
+	// we know the inserted element will be between the head and tail
+	var n *element
+	for n = sl.head; n.key.Before(key); n = n.next {
 	}
 
-	after.next.prev = el
-	el.next = after.next
-	after.next = el
-	el.prev = after
+	n.next.prev = el
+	el.next = n.next
+	n.next = el
+	el.prev = n
 
 	return sl.first()
 }
@@ -67,39 +68,38 @@ func (sl *sortedQueue) pop(key time.Time) (time.Time, Task) {
 		return NoMore, Task{}
 	}
 
-	if sl.head.key.After(key) {
+	if key.Before(sl.head.key) {
 		return NoMore, Task{}
 	}
 
-	if sl.head.next != nil {
-		sl.head.next.prev = nil
-	} else {
-		sl.tail = nil
-	}
-
 	n := sl.head
-	sl.head = n.next
+	sl.remove(n)
 	return n.key, n.val
 }
 
-func (sl *sortedQueue) remove(val Task) time.Time {
+// removeTask removes all elements that have the Task given
+// as value.
+func (sl *sortedQueue) removeTask(val Task) time.Time {
 	for c := sl.head; c != nil; c = c.next {
-		if c.val != val {
-			continue
-		}
-
-		if c.prev == nil {
-			sl.head = c.next
-		} else {
-			c.prev.next = c.next
-		}
-
-		if c.next == nil {
-			sl.tail = c.prev
-		} else {
-			c.next.prev = c.prev
+		if c.val == val {
+			sl.remove(c)
 		}
 	}
 
 	return sl.first()
+}
+
+// remove removes the node from the queue
+func (sl *sortedQueue) remove(n *element) {
+	if n.prev == nil {
+		sl.head = n.next
+	} else {
+		n.prev.next = n.next
+	}
+
+	if n.next == nil {
+		sl.tail = n.prev
+	} else {
+		n.next.prev = n.prev
+	}
 }
