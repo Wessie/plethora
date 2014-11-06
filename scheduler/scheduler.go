@@ -40,6 +40,14 @@ type Scheduler struct {
 	queue *sortedQueue
 }
 
+// Schedule schedules j, the Job given according to the Planner p
+func (s Scheduler) Schedule(p Planner, j Job) Task {
+	return s.ScheduleTask(Task{
+		Job:     j,
+		Planner: p,
+	})
+}
+
 // manage manages the scheduling process
 func (s Scheduler) manage() {
 	var wait = time.NewTimer(time.Hour * 24)

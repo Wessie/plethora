@@ -30,7 +30,7 @@ func TestScheduleJobNow(t *testing.T) {
 		return nil
 	})
 
-	s.ScheduleJobNow(job)
+	s.ScheduleJob(time.Now(), job)
 
 	select {
 	case <-ran:
