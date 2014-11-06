@@ -113,13 +113,6 @@ func (s Scheduler) runTask(task Task) {
 	s.ScheduleTask(task)
 }
 
-// Cancel cancels the scheduling of the task given, if the task is not scheduled.
-// Either due to never having existed or due to having been ran before Cancel was
-// called this will do nothing.
-func (s Scheduler) Cancel(t Task) {
-	s.removeTask <- t
-}
-
 // Stop stops the scheduler, Stop waits until an acknowledgement of stopping
 // has been received. Calling Stop multiple times does nothing
 func (s Scheduler) Stop() {
