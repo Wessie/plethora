@@ -51,7 +51,7 @@ type Scheduler struct {
 }
 
 // Schedule schedules j, the Job given according to the Planner p
-func (s Scheduler) Schedule(p Planner, j Job) Task {
+func (s *Scheduler) Schedule(p Planner, j Job) Task {
 	return s.ScheduleTask(Task{
 		Job:     j,
 		Planner: p,
@@ -59,7 +59,7 @@ func (s Scheduler) Schedule(p Planner, j Job) Task {
 }
 
 // manage manages the scheduling process
-func (s Scheduler) manage() {
+func (s *Scheduler) manage() {
 	var wait = time.NewTimer(MaximumSleep)
 	var nextTaskTime time.Time
 	var estimate time.Duration
@@ -89,7 +89,7 @@ stopScheduler:
 
 // queueTask adds a task to the scheduling queue, this function is
 // only safe to call from the managing goroutine.
-func (s Scheduler) queueTask(tsk Task) time.Time {
+func (s *Scheduler) queueTask(tsk Task) time.Time {
 	var taskTime = tsk.PlanJob(tsk.Job)
 
 	if !taskTime.Equal(NoPlan) {
@@ -101,7 +101,7 @@ func (s Scheduler) queueTask(tsk Task) time.Time {
 
 // unqueueTask removes a task from the scheduling queue, this function
 // is only safe to call from the managing goroutine.
-func (s Scheduler) unqueueTask(tsk Task) time.Time {
+func (s *Scheduler) unqueueTask(tsk Task) time.Time {
 	s.queue.removeTask(tsk)
 	return s.queue.first()
 }
@@ -110,7 +110,7 @@ func (s Scheduler) unqueueTask(tsk Task) time.Time {
 // 1. runs all tasks that are ready to run
 // 2. returns the time of the first task that isn't ready to run
 // yet.
-func (s Scheduler) processQueue() time.Time {
+func (s *Scheduler) processQueue() time.Time {
 	var task Task
 	var taskTime time.Time
 
@@ -129,21 +129,21 @@ func (s Scheduler) processQueue() time.Time {
 	return now.Add(time.Hour * 24)
 }
 
-func (s Scheduler) runTask(task Task) {
+func (s *Scheduler) runTask(task Task) {
 	task.Run()
 	s.ScheduleTask(task)
 }
 
 // Stop stops the scheduler, Stop waits until an acknowledgement of stopping
 // has been received. Calling Stop multiple times does nothing
-func (s Scheduler) Stop() {
-	// if we're already closed there is nothing to do here
+func (s *Scheduler) Stop() {
 	select {
-	case <-s.stopped:
+	case <-s.stopped: // already closed check
 		return
-	default:
+	case s.stop <- struct{}{}: // send stop signal
 	}
 
-	close(s.stop)
-	<-s.stopped
+	select { // check that we've actually stopped
+	case <-s.stopped:
+	}
 }
