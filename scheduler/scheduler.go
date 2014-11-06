@@ -50,11 +50,26 @@ type Scheduler struct {
 	queue *sortedQueue
 }
 
+// ScheduleTask schedules a task to be run
+func (s *Scheduler) ScheduleTask(tsk Task) Task {
+	s.newTask <- tsk
+	tsk.schedule = s
+	return tsk
+}
+
 // Schedule schedules j, the Job given according to the Planner p
 func (s *Scheduler) Schedule(p Planner, j Job) Task {
 	return s.ScheduleTask(Task{
 		Job:     j,
 		Planner: p,
+	})
+}
+
+// ScheduleJob schedules a Job to be run once at the specified time
+func (s *Scheduler) ScheduleJob(t time.Time, j Job) Task {
+	return s.ScheduleTask(Task{
+		Job:     j,
+		Planner: newTimePlanner(t),
 	})
 }
 

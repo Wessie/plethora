@@ -21,10 +21,3 @@ func (t Task) Cancel() error {
 	t.schedule.removeTask <- t
 	return nil
 }
-
-// ScheduleTask schedules a task to be run
-func (s Scheduler) ScheduleTask(t Task) Task {
-	s.newTask <- t
-	t.schedule = &s
-	return t
-}
