@@ -51,16 +51,17 @@ func (sl *sortedQueue) put(key time.Time, val Task) {
 		return
 	}
 
-	// find the element to insert after, we can omit nil checks because
-	// we know the inserted element will be between the head and tail
+	// find the element to insert before, we can omit nil checks because
+	// we know the resulting element will be between head and tail
 	var n *element
 	for n = sl.head; n.key.Before(key); n = n.next {
 	}
 
-	n.next.prev = el
-	el.next = n.next
-	n.next = el
-	el.prev = n
+	el.prev = n.prev
+	el.next = n
+
+	n.prev.next = el
+	n.prev = el
 }
 
 func (sl *sortedQueue) pop(key time.Time) (time.Time, Task) {

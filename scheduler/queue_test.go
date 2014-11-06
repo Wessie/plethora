@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"errors"
+	"math/rand"
+	"sort"
 	"testing"
 	"time"
 )
@@ -118,4 +120,55 @@ func TestQueueRemove(t *testing.T) {
 	if dummy.Run() != err {
 		t.Errorf("expected dummyJob %v, got %v", dummy, tsk)
 	}
+}
+
+func TestQueueRandomInsert(t *testing.T) {
+	var sl sortedQueue
+	var now = time.Now()
+	var items []time.Time
+	var N = 50
+
+	// add random times, use a known seed
+	rnd := rand.New(rand.NewSource(1))
+	for i := 0; i < N; i++ {
+		tm := now.Add(time.Duration(rnd.Int()) * time.Second)
+		sl.put(tm, Task{})
+
+		items = append(items, tm)
+	}
+
+	// we expect the items back in sorted order from the queue, so
+	// sort it on our side too
+	sortTime(items)
+	final := items[len(items)-1]
+
+	for i := 0; i < N; i++ {
+		tm, _ := sl.pop(final)
+
+		if tm != items[i] {
+			t.Errorf("expected time %s, got %s", items[i], tm)
+		}
+	}
+
+	if tm, _ := sl.pop(final); tm != NoMore {
+		t.Errorf("expected empty queue, found: %s", tm)
+	}
+}
+
+func sortTime(tslice []time.Time) {
+	sort.Sort(sortedTime(tslice))
+}
+
+type sortedTime []time.Time
+
+func (s sortedTime) Len() int {
+	return len(s)
+}
+
+func (s sortedTime) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sortedTime) Less(i, j int) bool {
+	return s[i].Before(s[j])
 }
