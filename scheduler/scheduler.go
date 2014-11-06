@@ -79,7 +79,7 @@ stopScheduler:
 func (s Scheduler) queueTask(tsk Task) time.Time {
 	var taskTime = tsk.PlanJob(tsk.Job)
 
-	if taskTime != NoMore {
+	if !taskTime.Equal(NoPlan) {
 		s.queue.put(taskTime, tsk)
 	}
 
@@ -102,14 +102,14 @@ func (s Scheduler) processQueue() time.Time {
 	var taskTime time.Time
 
 	now := time.Now()
-	for taskTime, task = s.queue.pop(now); taskTime != NoMore; taskTime, task = s.queue.pop(now) {
+	for taskTime, task = s.queue.pop(now); !taskTime.Equal(noTask); taskTime, task = s.queue.pop(now) {
 		go s.runTask(task)
 	}
 
 	// decide when we want to be called again, if there is stuff in the queue
 	// we choose the time of the first task that wants to be ran. Otherwise we
 	// use a very liberal 24 hours from the time this function started running.
-	if taskTime = s.queue.first(); taskTime != NoMore {
+	if taskTime = s.queue.first(); !taskTime.Equal(noTask) {
 		return taskTime
 	}
 

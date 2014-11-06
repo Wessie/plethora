@@ -18,7 +18,7 @@ type sortedQueue struct {
 // first returns the earliest time.Time in the queue
 func (sl *sortedQueue) first() time.Time {
 	if sl.head == nil {
-		return NoMore
+		return noTask
 	}
 
 	return sl.head.key
@@ -66,11 +66,11 @@ func (sl *sortedQueue) put(key time.Time, val Task) {
 
 func (sl *sortedQueue) pop(key time.Time) (time.Time, Task) {
 	if sl.head == nil {
-		return NoMore, Task{}
+		return noTask, Task{}
 	}
 
 	if key.Before(sl.head.key) {
-		return NoMore, Task{}
+		return noTask, Task{}
 	}
 
 	n := sl.head

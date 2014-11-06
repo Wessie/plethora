@@ -30,7 +30,7 @@ func TestQueuePop(t *testing.T) {
 	till := now.Add(time.Second * 5)
 
 	var j int
-	for tm, _ := sl.pop(till); tm != NoMore; tm, _ = sl.pop(till) {
+	for tm, _ := sl.pop(till); tm != noTask; tm, _ = sl.pop(till) {
 		if tm != filling[j] {
 			t.Errorf("expected equal times, wanted %s got %s", filling[j], tm)
 		}
@@ -54,7 +54,7 @@ func TestQueuePopNone(t *testing.T) {
 
 	tm, _ := sl.pop(now.Add(-time.Second))
 
-	if tm != NoMore {
+	if tm != noTask {
 		t.Errorf("expected nothing to pop, got: %s", tm)
 	}
 }
@@ -66,7 +66,7 @@ func TestQueueFirst(t *testing.T) {
 	fillFrom(&sl, now)
 
 	f := sl.first()
-	if f != now {
+	if !f.Equal(now) {
 		t.Errorf("expected now, got: %s != %s", now, f)
 	}
 }
@@ -82,7 +82,7 @@ func TestQueueFillEmptyFillCycle(t *testing.T) {
 		filling := fillFrom(&sl, now)
 
 		j = 0
-		for tm, _ := sl.pop(everything); tm != NoMore; tm, _ = sl.pop(everything) {
+		for tm, _ := sl.pop(everything); tm != noTask; tm, _ = sl.pop(everything) {
 			t.Logf("entering cycle: %d.%d", k, j)
 			if tm != filling[j] {
 				t.Errorf("expected equal times, wanted %s got %s", filling[j], tm)
@@ -113,7 +113,7 @@ func TestQueueRemove(t *testing.T) {
 
 	// now try to grab our dummy again, it should be the head
 	tm, tsk := sl.pop(dummyTime)
-	if tm != dummyTime {
+	if !tm.Equal(dummyTime) {
 		t.Errorf("expected dummyTime %s, got %s", dummyTime, tm)
 	}
 
@@ -150,7 +150,7 @@ func TestQueueRandomInsert(t *testing.T) {
 		}
 	}
 
-	if tm, _ := sl.pop(final); tm != NoMore {
+	if tm, _ := sl.pop(final); tm != noTask {
 		t.Errorf("expected empty queue, found: %s", tm)
 	}
 }

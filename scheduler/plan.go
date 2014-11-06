@@ -2,7 +2,8 @@ package scheduler
 
 import "time"
 
-var NoMore time.Time
+var noTask = time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC)
+var NoPlan = time.Date(0, 0, 0, 1, 0, 0, 0, time.UTC)
 
 // Planner is an interface to be implemented by the planner of jobs,
 // the planner is responsible for determining the next date and time
@@ -20,6 +21,6 @@ type timePlanner time.Time
 
 func (tp *timePlanner) PlanJob(Job) time.Time {
 	re := time.Time(*tp)
-	*tp = timePlanner(NoMore)
+	*tp = timePlanner(NoPlan)
 	return re
 }
