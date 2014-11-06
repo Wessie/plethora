@@ -2,6 +2,16 @@ package scheduler
 
 import "time"
 
+var MaximumSleep = time.Minute * 30
+
+// minDuration returns the lowest of (a, b)
+func minDuration(a, b time.Duration) time.Duration {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // NewScheduler returns an initialized Scheduler, the scheduler
 // is automatically started before NewScheduler returns.
 //
@@ -50,8 +60,9 @@ func (s Scheduler) Schedule(p Planner, j Job) Task {
 
 // manage manages the scheduling process
 func (s Scheduler) manage() {
-	var wait = time.NewTimer(time.Hour * 24)
+	var wait = time.NewTimer(MaximumSleep)
 	var nextTaskTime time.Time
+	var estimate time.Duration
 
 stopScheduler:
 	for {
@@ -66,8 +77,10 @@ stopScheduler:
 			break stopScheduler
 		}
 
-		// sync our timer to the schedule changes
-		wait.Reset(nextTaskTime.Sub(time.Now()))
+		// sync our timer to the schedule changes, we don't ever sleep
+		// longer than MaximumSleep.
+		estimate = nextTaskTime.Sub(time.Now())
+		wait.Reset(minDuration(estimate, MaximumSleep))
 	}
 
 	close(s.stopped)
