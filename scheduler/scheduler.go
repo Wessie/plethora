@@ -20,6 +20,7 @@ func minDuration(a, b time.Duration) time.Duration {
 func New(name string) *Scheduler {
 	s := &Scheduler{
 		Name:       name,
+		Stats:      NewStats(),
 		stop:       make(chan struct{}),
 		stopped:    make(chan struct{}),
 		newTask:    make(chan Task),
@@ -36,6 +37,9 @@ type Scheduler struct {
 	// Name of the scheduler instance, this is used for storing
 	// the schedule and any other persistent information.
 	Name string
+
+	// Stats is a collection of various statistics for this scheduler
+	Stats *Stats
 
 	// channel to signal a "you should stop running"
 	stop chan struct{}
