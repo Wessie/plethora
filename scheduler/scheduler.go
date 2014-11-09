@@ -12,12 +12,12 @@ func minDuration(a, b time.Duration) time.Duration {
 	return b
 }
 
-// NewScheduler returns an initialized Scheduler, the scheduler
+// New returns an initialized Scheduler, the scheduler
 // is automatically started before NewScheduler returns.
 //
 // The returned scheduler has to be stopped by calling Stop or
 // it will leak resources.
-func NewScheduler(name string) *Scheduler {
+func New(name string) *Scheduler {
 	s := &Scheduler{
 		Name:       name,
 		stop:       make(chan struct{}),

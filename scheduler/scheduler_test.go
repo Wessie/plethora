@@ -6,7 +6,7 @@ import (
 )
 
 func TestSchedulerStopping(t *testing.T) {
-	s := NewScheduler("test")
+	s := New("test")
 
 	stopped := make(chan bool)
 	go func() {
@@ -23,7 +23,7 @@ func TestSchedulerStopping(t *testing.T) {
 
 func TestScheduleJobNow(t *testing.T) {
 	var ran = make(chan bool)
-	var s = NewScheduler("test")
+	var s = New("test")
 
 	job := FuncJob(func() error {
 		close(ran)
@@ -46,7 +46,7 @@ func TestSchedulerDelay(t *testing.T) {
 
 	var delta = time.Second / 4
 	var delay = time.Second
-	var s = NewScheduler("test")
+	var s = New("test")
 	var when = make(chan time.Time)
 
 	job := FuncJob(func() error {
