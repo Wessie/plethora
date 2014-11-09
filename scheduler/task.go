@@ -28,16 +28,13 @@ func (t Task) Cancel() error {
 }
 
 func (t Task) String() string {
-	var j, p fmt.Stringer
-	var ok bool
+	return fmt.Sprintf("%s/%s", toString(t.Job), toString(t.Planner))
+}
 
-	if j, ok = t.Job.(fmt.Stringer); !ok {
-		j = reflect.TypeOf(t.Job)
+func toString(i interface{}) string {
+	if s, ok := i.(fmt.Stringer); ok {
+		return s.String()
+	} else {
+		return reflect.TypeOf(i).String()
 	}
-
-	if p, ok = t.Planner.(fmt.Stringer); !ok {
-		p = reflect.TypeOf(t.Planner)
-	}
-
-	return fmt.Sprintf("%s/%s", j, p)
 }
