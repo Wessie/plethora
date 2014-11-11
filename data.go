@@ -3,11 +3,12 @@ package plethora
 import (
 	"io"
 	"reflect"
+	"strings"
 )
 
 // seperator is used as seperator in various string utilities
 // Note: changing this will break existing databases
-const seperator = "-"
+const seperator = ":"
 
 var nameToProvider map[string]DataProvider
 var providerToName map[string]string
@@ -64,6 +65,10 @@ func Identifier(d Data) string {
 func RegisterProvider(name string, provider DataProvider) {
 	if nameToProvider[name] != nil {
 		panic("illegal: double register for single name")
+	}
+
+	if strings.Index(name, seperator) > 0 {
+		panic("illegal: seperator contained in provider name")
 	}
 
 	nameToProvider[name] = provider
