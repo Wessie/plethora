@@ -40,17 +40,19 @@ type Data interface {
 	Render(w io.Writer) error
 }
 
+type identifier string
+
 // Identifier returns an identifier unique to this Data, this is
 // different from Data.Identifier in that the former is only unique
 // to the provider associated with the Data. The identifier returned
 // by Identifier is unique in the whole system.
-func Identifier(d Data) string {
+func Identifier(d Data) identifier {
 	p := d.Provider()
 	if p == nil {
 		panic("illegal: data returned nil provider")
 	}
 
-	return providerName(p) + seperator + d.Identifier()
+	return identifier(providerName(p) + seperator + d.Identifier())
 }
 
 // RegisterProvider registers a DataProvider with the given name.
