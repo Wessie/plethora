@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// seperator is used as seperator in various string utilities
+// separator is used as separator in various string utilities
 // Note: changing this will break existing databases
-const seperator = ":"
+const separator = ":"
 
 var nameToProvider map[string]DataProvider
 var providerToName map[string]string
@@ -52,7 +52,7 @@ func Identifier(d Data) identifier {
 		panic("illegal: data returned nil provider")
 	}
 
-	return identifier(providerName(p) + seperator + d.Identifier())
+	return identifier(providerName(p) + separator + d.Identifier())
 }
 
 // RegisterProvider registers a DataProvider with the given name.
@@ -69,8 +69,8 @@ func RegisterProvider(name string, provider DataProvider) {
 		panic("illegal: double register for single name")
 	}
 
-	if strings.Index(name, seperator) > 0 {
-		panic("illegal: seperator contained in provider name")
+	if strings.Index(name, separator) > 0 {
+		panic("illegal: separator contained in provider name")
 	}
 
 	nameToProvider[name] = provider
